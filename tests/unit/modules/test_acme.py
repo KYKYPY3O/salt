@@ -250,6 +250,12 @@ class AcmeTestCase(TestCase, LoaderModuleMockMixin):
             "changes": {"mode": "0640"},
             "result": True,
         }
+        result_new_rfc2136_cert = {
+            "comment": "Certificate rfc_test renewed",
+            "not_after": datetime.datetime.fromtimestamp(valid_timestamp).isoformat(),
+            "changes": {},
+            "result": True,
+        }
 
         cmd_no_renew = {
             "stdout": textwrap.dedent(
@@ -359,3 +365,33 @@ class AcmeTestCase(TestCase, LoaderModuleMockMixin):
             self.assertEqual(
                 acme.cert("testing.example.com", certname="test"), result_renew
             )
+
+        # Test command line arguments for dns_plugin='rfc2136'
+        def check_cmd_line_params_rfc2136(cmd: str):
+            _rfc2136 = '--dns-rfc2136'
+            _rfc2136_credentials = '--dns-rfc2136-credentials'
+            self.assertIn(_rfc2136, cmd)
+            self.assertIn(_rfc2136_credentials, cmd)
+            return cmd_new_cert
+
+        with patch.object(acme, 'expires', return_value=datetime.datetime.fromtimestamp(valid_timestamp).isoformat()):
+            with patch.object(acme, '_expires', return_value=datetime.datetime.now()):
+                with patch("salt.modules.acme.LEA", "certbot"), patch.dict(
+                    acme.__salt__,
+                    {"cmd.run_all": check_cmd_line_params_rfc2136,
+                     "file.file_exists": MagicMock(return_value=True),
+                     "tls.cert_info": MagicMock(return_value={"not_after": valid_timestamp}),
+                     "file.check_perms": MagicMock(
+                         side_effect=lambda a, x, b, c, d, follow_symlinks: (
+                             salt.utils.dictupdate.set_dict_key_value(x, "result", True),
+                             None,
+                         )
+                     ),
+                     "retcode": 0,
+                     },
+                ):
+                    self.assertEqual(acme.cert("testing.example.com",
+                                               certname="rfc_test",
+                                               dns_plugin='rfc2136',
+                                               dns_plugin_credentials='/path/to/file'), result_new_rfc2136_cert
+                                     )

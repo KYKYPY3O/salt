@@ -162,8 +162,8 @@ def cert(
         the port Certbot listens on. A conforming ACME server will still attempt
         to connect on port 80.
     :param https_01_address: The address the server listens to during http-01 challenge.
-    :param dns_plugin: Name of a DNS plugin to use (currently only 'cloudflare'
-        or 'digitalocean')
+    :param dns_plugin: Name of a DNS plugin to use (currently 'cloudflare'
+        or 'digitalocean' or 'rfc2136')
     :param dns_plugin_credentials: Path to the credentials file if required by
         the specified DNS plugin
     :param dns_plugin_propagate_seconds: Number of seconds to wait for DNS propogations
@@ -184,7 +184,7 @@ def cert(
     if certname is None:
         certname = name
 
-    supported_dns_plugins = ["cloudflare"]
+    supported_dns_plugins = ["cloudflare",  "rfc2136"]
 
     cert_file = _cert_file(certname, "cert")
     if not __salt__["file.file_exists"](cert_file):
@@ -216,6 +216,9 @@ def cert(
         if dns_plugin == "cloudflare":
             cmd.append("--dns-cloudflare")
             cmd.append("--dns-cloudflare-credentials {}".format(dns_plugin_credentials))
+        elif dns_plugin == "rfc2136":
+            cmd.append("--dns-rfc2136")
+            cmd.append("--dns-rfc2136-credentials {}".format(dns_plugin_credentials))
         else:
             return {
                 "result": False,

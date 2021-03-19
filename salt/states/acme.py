@@ -89,7 +89,7 @@ def cert(
                          the port Certbot listens on. A conforming ACME server
                          will still attempt to connect on port 80.
     :param https_01_address: The address the server listens to during http-01 challenge.
-    :param dns_plugin: Name of a DNS plugin to use (currently only 'cloudflare')
+    :param dns_plugin: Name of a DNS plugin to use (currently 'cloudflare' or 'rfc2136')
     :param dns_plugin_credentials: Path to the credentials file if required by the specified DNS plugin
     """
 
